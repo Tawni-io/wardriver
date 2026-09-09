@@ -1,0 +1,10 @@
+{
+  "name": "esp_lcd_st7789",
+  "version": "1.0.0",
+  "description": "ESP LCD ST7789 panel driver (from LilyGO T-Display-C5)",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "build": {
+    "includeDir": "."
+  }
+}
