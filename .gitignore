@@ -30,8 +30,7 @@ __pycache__/
 # AI / Cursor local admin (not needed by firmware users)
 .agent/
 agent-transcripts/
-.cursor/*.log
-.cursor/debug.log
+.cursor/
 uploads/
 *.canvas.tsx
 .canvas/

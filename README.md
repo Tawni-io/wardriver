@@ -4,7 +4,7 @@ A [Tawni.io](https://tawni.io) firmware for **Rufous** hardware: LILYGO **T-Disp
 
 **Job:** Passive Wi‑Fi + BLE survey with GPS. Log **Wigle CSV** to flash. Export from SoftAP (`TawniWardriver`).
 
-**Not for base Tawni** (no GPS). See [`TAWNI.md`](TAWNI.md). Current version: **0.3.4**.
+**Not for base Tawni** (no GPS). See [`TAWNI.md`](TAWNI.md). Current version: **[0.3.4](CHANGELOG.md)**.
 
 ## Hardware
 
@@ -29,6 +29,7 @@ Aligned with Gym Timer (bottom = GPIO0 marked setup, top = GPIO28):
 | Top short (GPIO28) | Next page (Live / Recent / Info) |
 | Top long ~2 s (GPIO28) | Previous page |
 | Both hold ~3 s | Soft power-off |
+| Bottom after wake ~1.5 s (GPIO0) | Stay on |
 
 CSV download, clear log, and firmware update live on the phone SoftAP page.
 
