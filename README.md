@@ -1,63 +1,137 @@
-# Wardriver (Rufous)
+# Tawni — Wardriver
 
-A [Tawni.io](https://tawni.io) firmware for **Rufous** hardware: LILYGO **T-Display C5** + **GPS** + external antenna, in the Tawni enclosure (2 buttons).
+Passive Wi‑Fi + BLE survey with GPS. Same pocket box idea as other Tawni firmwares — this one is **Rufous only**.
 
-**Job:** Passive Wi‑Fi + BLE survey with GPS. Log **Wigle CSV** to flash. Export from SoftAP (`TawniWardriver`).
+> **Rufous only.** Needs GPS + external antenna. **Never** for base Tawni (no GPS).  
+> Wrong box → no fix, no useful Wigle log.
 
-**Not for base Tawni** (no GPS). See [`TAWNI.md`](TAWNI.md). Current version: **[0.3.4](CHANGELOG.md)**.
+**Hardware:** [LILYGO T-Display C5](https://www.lilygo.cc/products/t-display-c5) (ESP32-C5, 1.9″) on **Rufous** (GPS + external antenna).  
+**Product:** [tawni.io](https://tawni.io)
 
-## Hardware
+Current version: **v0.3.4** — [changelog](CHANGELOG.md) · [releases](https://github.com/Tawni-io/wardriver/releases)
 
-| Item | Detail |
+Release asset: `wardriver-rufous-c5-v0.3.4.bin`
+
+---
+
+## What this firmware does
+
+| Job | Detail |
 | --- | --- |
-| Board | LILYGO T-Display C5 (ESP32-C5, 1.9″ ST7789, 170×320 portrait) |
-| SKU | **Rufous** |
-| GPS | Seeed XIAO L76K — 3.3 V, GND, UART crossed **TXD (GPIO11) / RXD (GPIO12)**, **WUP → GPIO1** |
-| Radios | Dual-band Wi‑Fi + BLE; **external** antenna on Rufous |
-| Storage | Onboard flash (no microSD) |
+| Survey | Passive Wi‑Fi + BLE scan (no deauth / attack tools) |
+| GPS | Fix when available; empty coords if no fix (honest log) |
+| Log | Wigle CSV stored in onboard flash (no microSD) |
+| Export | SoftAP download / clear on your phone |
 
-GPS UART: locked in `include/board_config.h` (see [`docs/HARDWARE_HANDOVER.md`](docs/HARDWARE_HANDOVER.md)).
+Cabin pages: **Live** (logging + fix + counts), **Recent** (last hits), **Info** (version, battery, storage). Settings and CSV live on the phone, not in a cabin menu.
+
+---
 
 ## Buttons
 
-Aligned with Gym Timer (bottom = GPIO0 marked setup, top = GPIO28):
+Two buttons. The enclosure marks the **setup** button (bottom). Flip Display 180 does not swap them.
 
-| Input | Intent |
+| Input | Action |
 | --- | --- |
-| Bottom short (GPIO0) | Start / stop logging |
-| Bottom long ~2 s (GPIO0) | SoftAP enter / leave (`TawniWardriver`) |
-| Top short (GPIO28) | Next page (Live / Recent / Info) |
-| Top long ~2 s (GPIO28) | Previous page |
-| Both hold ~3 s | Soft power-off |
-| Bottom after wake ~1.5 s (GPIO0) | Stay on |
+| Bottom short | Start / stop logging |
+| Top short | Next page (Live / Recent / Info) |
+| Top long (~2 s) | Previous page |
+| Bottom long (~2 s) | Setup hotspot on/off |
+| Both held (~3 s) | Soft power-off (deep sleep) |
+| Bottom after wake (~1.5 s) | Stay on |
 
-CSV download, clear log, and firmware update live on the phone SoftAP page.
+Swipe left/right mirrors next/previous if the touch screen is fitted.
 
-## Build
+---
 
-Python 3.12+, PlatformIO Core, Git for Windows on PATH, USB-C to the T-Display C5.
+## Install & update
+
+### USB — first flash or recovery
+
+Use a USB-C cable and the flasher on [tawni.io](https://tawni.io) when available, or flash `wardriver-rufous-c5-v0.3.4.bin` from [Releases](https://github.com/Tawni-io/wardriver/releases) with your usual ESP32 tool.
+
+Flash **Rufous** only. Base Tawni is not supported.
+
+### Phone — later updates
+
+1. Download `wardriver-rufous-c5-vX.Y.Z.bin` from [Releases](https://github.com/Tawni-io/wardriver/releases) (or use the flasher on [tawni.io](https://tawni.io) when available)
+2. Long-press the marked setup button (~2 s)
+3. Join Wi‑Fi **TawniWardriver** → open `http://192.168.4.1`
+4. **Firmware** → upload the `.bin` → wait for reboot
+
+Keep the unit powered during upload.
+
+<!-- website:omit -->
+
+#### Developer USB (PlatformIO)
+
+Python 3.12+, [PlatformIO Core](https://platformio.org/install/cli), [Git](https://git-scm.com/downloads) on PATH, USB-C cable.
 
 ```bash
-pio run -e tawni
 pio run -e tawni -t upload
 pio device monitor -b 115200
 ```
 
-Windows upload: `chcp 65001` then `$env:PYTHONUTF8="1"` before `pio … -t upload`. Download mode: hold **BOOT**, tap **RST**, release **BOOT**.
+If upload fails: hold **BOOT**, tap **RST**, release **BOOT**, then upload again.
 
-## Docs
+**Windows:** run this before upload so the flash progress bar does not hang the COM port:
 
-| Doc | Role |
-| --- | --- |
-| [`TAWNI.md`](TAWNI.md) | Agent / product + board contract |
-| [`docs/PRODUCT.md`](docs/PRODUCT.md) | North star (MVP vs later) |
-| [`docs/PLAN.md`](docs/PLAN.md) | Bring-up order + open questions |
-| [`docs/HARDWARE_HANDOVER.md`](docs/HARDWARE_HANDOVER.md) | Pins, LCD, Rufous GPS |
+```powershell
+chcp 65001
+$env:PYTHONUTF8 = "1"
+$env:PYTHONIOENCODING = "utf-8"
+pio run -e tawni -t upload
+```
 
-## Release builds
+<!-- /website:omit -->
 
-Public `.bin` files must be **`build_type = release`** (path-strip via `tools/pio_strip_host_paths.py`). Asset name: `wardriver-rufous-c5-vX.Y.Z.bin`.
+---
+
+## Setup & export
+
+Long-press the bottom (setup) button until the hotspot is on. Cabin shows setup / export mode.
+
+This firmware’s hotspot is **TawniWardriver**. Other Tawni firmwares use their own SSID so two boxes on the bench do not collide.
+
+1. Join **TawniWardriver** (open network) → `http://192.168.4.1`
+2. **Download Wigle CSV** or **Clear log** as needed
+3. **Portrait / Landscape** if you want a different cabin layout (reboots to apply)
+4. **Firmware** upload for field updates, or **Exit hotspot** when done
+
+Logging starts and stops with the bottom short-press on the cabin. Export does not invent GPS coordinates.
+
+---
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE). `lib/esp_lcd_st7789` vendored from [Xinyuan-LilyGO/T-Display-C5](https://github.com/Xinyuan-LilyGO/T-Display-C5).
+Firmware: [MIT](LICENSE).
+
+<!-- website:omit -->
+
+## Build from source
+
+```bash
+pio run -e tawni
+```
+
+Field binary: `.pio/build/tawni/firmware.bin`  
+Rename for a release: `wardriver-rufous-c5-vX.Y.Z.bin`
+
+Public images (GitHub Releases, SoftAP, USB that leaves the bench) are **`build_type = release` only** — never `-ggdb2`. Path strip: `tools/pio_strip_host_paths.py`.
+
+Version string: `-DTAWNI_VERSION` in `platformio.ini` (keep the `#ifndef` fallbacks in `src/main.cpp`, `src/softap/softap.cpp`, `src/ui/splash.cpp`, and cabin the same). Every GitHub Release must bump that string — splash, SoftAP, and Info all read it. Add a [CHANGELOG](CHANGELOG.md) entry, then tag `vX.Y.Z`.
+
+## Developer docs
+
+| Doc | What |
+| --- | --- |
+| [TAWNI.md](TAWNI.md) | Agent / product + board contract |
+| [docs/PRODUCT.md](docs/PRODUCT.md) | North star (MVP vs later) |
+| [docs/PLAN.md](docs/PLAN.md) | Bring-up order |
+| [docs/HARDWARE_HANDOVER.md](docs/HARDWARE_HANDOVER.md) | Pins, LCD, Rufous GPS UART |
+
+GPS UART (Rufous): TXD GPIO11 / RXD GPIO12 / WUP GPIO1 — locked; do not change without Hardware / orchestrator.
+
+Vendored drivers keep their own licenses: [`lib/esp_lcd_st7789`](lib/esp_lcd_st7789) (LilyGO / João Brilha), [`lib/CST816S`](lib/CST816S) (Felix Biego).
+
+<!-- /website:omit -->
