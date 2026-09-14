@@ -26,3 +26,12 @@ ehthumbs.db
 # Python
 __pycache__/
 *.pyc
+
+# AI / Cursor local admin (not needed by firmware users)
+.agent/
+agent-transcripts/
+.cursor/*.log
+.cursor/debug.log
+uploads/
+*.canvas.tsx
+.canvas/

@@ -5,6 +5,5 @@
 
 #include "board_config.h"
 
-// Landscape cabin UI (DASHBOARD.md)
-#define DISPLAY_WIDTH  LCD_HEIGHT  // 320
-#define DISPLAY_HEIGHT LCD_WIDTH   // 170
+// Native panel cells. Logical cabin size comes from display_width()/height().
+// Portrait = LCD_WIDTH × LCD_HEIGHT (170×320). Landscape = swapped (320×170).

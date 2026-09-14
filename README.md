@@ -1,19 +1,36 @@
-# Wardriver
+# Wardriver (Rufous)
 
-A [Tawni.io](https://tawni.io) firmware face for the **LILYGO T-Display C5** (ESP32-C5, 1.9″ ST7789, 320×170 landscape).
+A [Tawni.io](https://tawni.io) firmware for **Rufous** hardware: LILYGO **T-Display C5** + **GPS** + external antenna, in the Tawni enclosure (2 buttons).
 
-**Job:** Wi‑Fi + BLE survey. **Firmware is TBD** — this repo holds the proven board support (LCD, buttons, splash). No onboard GPS or microSD; log SSIDs/BLE to flash and export from SoftAP. Dual-band scan is the C5 hook vs typical 2.4-only ESP toys.
+**Job:** Passive Wi‑Fi + BLE survey with GPS. Log **Wigle CSV** to flash. Export from SoftAP (`TawniWardriver`).
 
-Board + two-button + SoftAP contract: [`TAWNI.md`](TAWNI.md). Hardware appendix: [`docs/HARDWARE_HANDOVER.md`](docs/HARDWARE_HANDOVER.md).
+**Not for base Tawni** (no GPS). See [`TAWNI.md`](TAWNI.md). Current version: **0.3.4**.
 
-## Planned two-button fit
+## Hardware
 
-| Input | Intent (when firmware lands) |
+| Item | Detail |
 | --- | --- |
-| GPIO0 short | Next page (live / log / stats) |
-| GPIO28 short | Previous |
-| GPIO0 long (~2 s) | SoftAP (`TawniWardriver`) — export |
-| Both hold (~3 s) | Soft power-off |
+| Board | LILYGO T-Display C5 (ESP32-C5, 1.9″ ST7789, 170×320 portrait) |
+| SKU | **Rufous** |
+| GPS | Seeed XIAO L76K — 3.3 V, GND, UART crossed **TXD (GPIO11) / RXD (GPIO12)**, **WUP → GPIO1** |
+| Radios | Dual-band Wi‑Fi + BLE; **external** antenna on Rufous |
+| Storage | Onboard flash (no microSD) |
+
+GPS UART: locked in `include/board_config.h` (see [`docs/HARDWARE_HANDOVER.md`](docs/HARDWARE_HANDOVER.md)).
+
+## Buttons
+
+Aligned with Gym Timer (bottom = GPIO0 marked setup, top = GPIO28):
+
+| Input | Intent |
+| --- | --- |
+| Bottom short (GPIO0) | Start / stop logging |
+| Bottom long ~2 s (GPIO0) | SoftAP enter / leave (`TawniWardriver`) |
+| Top short (GPIO28) | Next page (Live / Recent / Info) |
+| Top long ~2 s (GPIO28) | Previous page |
+| Both hold ~3 s | Soft power-off |
+
+CSV download, clear log, and firmware update live on the phone SoftAP page.
 
 ## Build
 
@@ -27,7 +44,19 @@ pio device monitor -b 115200
 
 Windows upload: `chcp 65001` then `$env:PYTHONUTF8="1"` before `pio … -t upload`. Download mode: hold **BOOT**, tap **RST**, release **BOOT**.
 
-## License notes
+## Docs
 
-- Face firmware: TBD
-- `lib/esp_lcd_st7789` vendored from [Xinyuan-LilyGO/T-Display-C5](https://github.com/Xinyuan-LilyGO/T-Display-C5)
+| Doc | Role |
+| --- | --- |
+| [`TAWNI.md`](TAWNI.md) | Agent / product + board contract |
+| [`docs/PRODUCT.md`](docs/PRODUCT.md) | North star (MVP vs later) |
+| [`docs/PLAN.md`](docs/PLAN.md) | Bring-up order + open questions |
+| [`docs/HARDWARE_HANDOVER.md`](docs/HARDWARE_HANDOVER.md) | Pins, LCD, Rufous GPS |
+
+## Release builds
+
+Public `.bin` files must be **`build_type = release`** (path-strip via `tools/pio_strip_host_paths.py`). Asset name: `wardriver-rufous-c5-vX.Y.Z.bin`.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). `lib/esp_lcd_st7789` vendored from [Xinyuan-LilyGO/T-Display-C5](https://github.com/Xinyuan-LilyGO/T-Display-C5).

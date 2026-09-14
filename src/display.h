@@ -10,10 +10,15 @@ bool display_init(void);
 esp_lcd_panel_handle_t display_panel(void);
 esp_lcd_panel_io_handle_t display_panel_io(void);
 
+/** Logical cabin size after layout apply (portrait 170×320 or landscape 320×170). */
+int display_width(void);
+int display_height(void);
+bool display_is_landscape(void);
+
 // Bind LVGL flush_ready to SPI color-transfer-done (IO trampoline set at create).
 bool display_bind_color_done_cb(esp_lcd_panel_io_color_trans_done_cb_t cb, void* user_ctx);
-uint8_t display_preset_count(void);
-bool display_reconfigure(uint8_t preset_id);
+/** Apply cabin layout: 0 = portrait, 1 = landscape (prefs kOrient*). Call before LVGL init. */
+bool display_apply_layout(uint8_t layout);
 void display_set_backlight(bool on);
 /** Backlight off + ST7789 sleep (soft power-off prep). */
 void display_enter_sleep(void);

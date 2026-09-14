@@ -12,6 +12,7 @@
 #include <freertos/semphr.h>
 
 #include "board_pins.h"
+#include "config/prefs.h"
 
 namespace {
 
@@ -20,6 +21,9 @@ constexpr int kSpiClockHz = 40000000;  // LilyGO factory clock
 esp_lcd_panel_handle_t g_panel = nullptr;
 esp_lcd_panel_io_handle_t g_io = nullptr;
 bool g_ready = false;
+int g_disp_w = LCD_WIDTH;
+int g_disp_h = LCD_HEIGHT;
+bool g_landscape = false;
 
 esp_lcd_panel_io_color_trans_done_cb_t g_color_done_cb = nullptr;
 void* g_color_done_ctx = nullptr;
@@ -59,18 +63,27 @@ inline uint16_t to_panel_color(uint16_t rgb565) {
   return (uint16_t)((rgb565 << 8) | (rgb565 >> 8));
 }
 
-// Preset 0: LilyGO factory landscape — verified RGB thirds on hardware.
-// Preset 1: same landscape, 180° (upside-down mount). Gap may need a hardware
-// tweak if the image is shifted; MADCTL flip is mirror_x/y inverted.
-bool panel_apply_landscape(uint8_t preset_id) {
+// Portrait: native 170×320. Landscape: factory MADCTL swap (320×170).
+bool panel_apply_layout(bool landscape) {
   if (!g_panel) {
     return false;
   }
-  const bool flip = (preset_id == 1);
-  ESP_ERROR_CHECK(esp_lcd_panel_mirror(g_panel, !flip, flip));
-  ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(g_panel, true));
-  ESP_ERROR_CHECK(esp_lcd_panel_invert_color(g_panel, true));
-  ESP_ERROR_CHECK(esp_lcd_panel_set_gap(g_panel, 0, 35));
+  if (landscape) {
+    ESP_ERROR_CHECK(esp_lcd_panel_mirror(g_panel, true, false));
+    ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(g_panel, true));
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(g_panel, true));
+    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(g_panel, 0, 35));
+    g_disp_w = LCD_HEIGHT;
+    g_disp_h = LCD_WIDTH;
+  } else {
+    ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(g_panel, false));
+    ESP_ERROR_CHECK(esp_lcd_panel_mirror(g_panel, false, false));
+    ESP_ERROR_CHECK(esp_lcd_panel_invert_color(g_panel, true));
+    ESP_ERROR_CHECK(esp_lcd_panel_set_gap(g_panel, 35, 0));
+    g_disp_w = LCD_WIDTH;
+    g_disp_h = LCD_HEIGHT;
+  }
+  g_landscape = landscape;
   ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(g_panel, true));
   return true;
 }
@@ -107,7 +120,7 @@ bool display_init(void) {
   bus_config.sclk_io_num = LCD_SCK;
   bus_config.quadwp_io_num = -1;
   bus_config.quadhd_io_num = -1;
-  bus_config.max_transfer_sz = DISPLAY_WIDTH * DISPLAY_HEIGHT * 2 + 8;
+  bus_config.max_transfer_sz = LCD_WIDTH * LCD_HEIGHT * 2 + 8;
 
   esp_err_t err = spi_bus_initialize(SPI2_HOST, &bus_config, SPI_DMA_CH_AUTO);
   if (err != ESP_OK) {
@@ -154,7 +167,7 @@ bool display_init(void) {
   delay(125);
 
   ESP_ERROR_CHECK(esp_lcd_panel_init(g_panel));
-  if (!panel_apply_landscape(0)) {
+  if (!panel_apply_layout(false)) {
     return false;
   }
 
@@ -164,7 +177,8 @@ bool display_init(void) {
 
   g_ready = true;
   display_fill(COL_BLACK);
-  Serial.println("LCD ready (landscape 320x170, factory MADCTL/gap)");
+  Serial.printf("LCD ready (%dx%d %s)\n", g_disp_w, g_disp_h,
+                g_landscape ? "landscape" : "portrait");
   return true;
 }
 
@@ -176,18 +190,20 @@ esp_lcd_panel_io_handle_t display_panel_io(void) {
   return g_io;
 }
 
-uint8_t display_preset_count(void) {
-  return 2;
-}
+int display_width(void) { return g_disp_w; }
 
-bool display_reconfigure(uint8_t preset_id) {
-  if (preset_id >= display_preset_count()) {
-    return false;
-  }
-  const bool ok = panel_apply_landscape(preset_id);
+int display_height(void) { return g_disp_h; }
+
+bool display_is_landscape(void) { return g_landscape; }
+
+#include "config/prefs.h"
+
+bool display_apply_layout(uint8_t layout) {
+  const bool landscape = (layout == kOrientLandscape);
+  const bool ok = panel_apply_layout(landscape);
   if (ok) {
-    Serial.printf("LCD orient preset %u (%s)\n", (unsigned)preset_id,
-                  preset_id == 1 ? "flip-180" : "normal");
+    Serial.printf("LCD layout %s (%dx%d)\n", landscape ? "landscape" : "portrait", g_disp_w,
+                  g_disp_h);
   }
   return ok;
 }
@@ -220,11 +236,11 @@ void display_fill_rect(int x, int y, int w, int h, uint16_t color_rgb565) {
     h += y;
     y = 0;
   }
-  if (x + w > DISPLAY_WIDTH) {
-    w = DISPLAY_WIDTH - x;
+  if (x + w > g_disp_w) {
+    w = g_disp_w - x;
   }
-  if (y + h > DISPLAY_HEIGHT) {
-    h = DISPLAY_HEIGHT - y;
+  if (y + h > g_disp_h) {
+    h = g_disp_h - y;
   }
   if (w <= 0 || h <= 0) {
     return;
@@ -280,7 +296,7 @@ void display_fill_round_rect(int x, int y, int w, int h, int r, uint16_t color_r
 }
 
 void display_fill(uint16_t color_rgb565) {
-  display_fill_rect(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT, color_rgb565);
+  display_fill_rect(0, 0, g_disp_w, g_disp_h, color_rgb565);
 }
 
 void display_draw_bitmap(int x, int y, int w, int h, const uint16_t* rgb565) {
@@ -301,11 +317,11 @@ void display_draw_bitmap(int x, int y, int w, int h, const uint16_t* rgb565) {
     h += y;
     y = 0;
   }
-  if (x + w > DISPLAY_WIDTH) {
-    w = DISPLAY_WIDTH - x;
+  if (x + w > g_disp_w) {
+    w = g_disp_w - x;
   }
-  if (y + h > DISPLAY_HEIGHT) {
-    h = DISPLAY_HEIGHT - y;
+  if (y + h > g_disp_h) {
+    h = g_disp_h - y;
   }
   if (w <= 0 || h <= 0) {
     return;
@@ -314,7 +330,7 @@ void display_draw_bitmap(int x, int y, int w, int h, const uint16_t* rgb565) {
   // Full-width strips match the known-good fill path on this ST7789.
   constexpr int kStripH = 8;
   uint16_t* buf = (uint16_t*)heap_caps_malloc(
-      (size_t)DISPLAY_WIDTH * kStripH * sizeof(uint16_t), MALLOC_CAP_DMA);
+      (size_t)g_disp_w * kStripH * sizeof(uint16_t), MALLOC_CAP_DMA);
   if (!buf) {
     Serial.println("display_draw_bitmap: OOM");
     return;
@@ -325,8 +341,8 @@ void display_draw_bitmap(int x, int y, int w, int h, const uint16_t* rgb565) {
   for (int row = 0; row < h; row += kStripH) {
     const int bh = (row + kStripH <= h) ? kStripH : (h - row);
     for (int dy = 0; dy < bh; dy++) {
-      uint16_t* dst = buf + (size_t)dy * (size_t)DISPLAY_WIDTH;
-      for (int col = 0; col < DISPLAY_WIDTH; col++) {
+      uint16_t* dst = buf + (size_t)dy * (size_t)g_disp_w;
+      for (int col = 0; col < g_disp_w; col++) {
         dst[col] = pad;
       }
       const uint16_t* src =
@@ -335,7 +351,7 @@ void display_draw_bitmap(int x, int y, int w, int h, const uint16_t* rgb565) {
         dst[x + col] = to_panel_color(src[col]);
       }
     }
-    esp_lcd_panel_draw_bitmap(g_panel, 0, y + row, DISPLAY_WIDTH, y + row + bh, buf);
+    esp_lcd_panel_draw_bitmap(g_panel, 0, y + row, g_disp_w, y + row + bh, buf);
     blit_wait();
   }
 

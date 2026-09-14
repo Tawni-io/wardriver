@@ -1,33 +1,35 @@
-﻿---
-description: Two-button hardware UX — navigation and settings must fit GPIO0 + GPIO28 only
+---
+description: Common Tawni two-button map - shared shell locked; short-press may differ by firmware
 alwaysApply: true
 ---
 
-# Two-button navigation (current hardware)
+# Two-button navigation (Tawni common map)
 
-The unit has **only two physical buttons**. There is no on-device touch UI for settings today. SoftAP on a phone is the settings surface. Touch (CST816S swipe) is optional / future — **buttons remain the primary cabin input** until touch hardware is standard.
+Read `../../TAWNI_RULES.md` section **3a**. That shared shell **wins**. Do not invent new SoftAP / soft-off / wake timings.
 
-## Canonical map (`BUTTON_PIN` = GPIO0, `BUTTON_BOOT` = GPIO28)
+## Physical (never swap, including Flip 180)
+
+| Marking | GPIO | Role |
+| --- | --- | --- |
+| Bottom / setup mark | **GPIO0** | Primary / setup |
+| Top | **GPIO28** | Secondary |
+
+## Shared on every firmware
 
 | Input | Action | Timing |
 | --- | --- | --- |
-| GPIO0 short | Next page (or face primary short) | release before long |
-| GPIO28 short | Previous page (or face secondary short) | — |
-| GPIO0 long alone | SoftAP setup enter / leave | ~2 s (`kLongPressMs`) |
-| Both held | Soft power-off → deep sleep | ~3 s (`kSoftOffHoldMs`) |
-| GPIO0 after GPIO wake | Confirm stay awake | ~1.5 s (`kWakeConfirmMs`) |
+| Bottom long alone (GPIO0) | SoftAP on/off (SSID `TawniWardriver`) | ~2 s |
+| Both held | Soft power-off | ~3 s |
+| Bottom after wake (GPIO0) | Stay awake | ~1.5 s |
 
-Do not remap button roles when **Flip Display 180** is on — enclosure marks the setup button.
+Dual-hold must suppress SoftAP long-press. Soft-off blocked during OTA. GPIO0 alone leaves SoftAP while AP is up. Settings stay on SoftAP - no nested cabin menus.
 
-## Design constraints
+## This firmware's short / top-long jobs
 
-- **No nested in-cabin menus** that need “select / back / adjust” with only two keys. Cabin = page cycle + SoftAP toggle + soft-off.
-- **Settings and complex config** go to SoftAP (this face’s SSID on a phone), not a button-driven wizard on the cabin screen.
-- When adding UI or features, answer: *how does the user reach / change this with two buttons?* If they cannot, put it on SoftAP or defer until touch.
-- Prefer short-press for navigation, long-press / dual-hold for rare power/setup actions. Avoid new chord or timing schemes that collide with SoftAP (2 s) or soft-off (3 s both).
-- Dual-hold soft-off must suppress SoftAP long-press.
-- Soft-off blocked during OTA; SoftAP long-press unchanged while SoftAP is up (GPIO0 alone leaves).
+| Input | Action |
+| --- | --- |
+| Bottom short (GPIO0) | Start / stop logging |
+| Top short (GPIO28) | Next page |
+| Top long (GPIO28) | Previous page |
 
-## Future touch
-
-Swipe can mirror next/previous when the touch IC is present. Do not remove or weaken button fallbacks. Until then, keep SoftAP as the apply/settings path.
+When adding features: keep the shared rows identical; only change short-press / top-long if it still fits two buttons.

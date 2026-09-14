@@ -113,7 +113,7 @@ bool lvgl_port_init(void) {
   lv_init();
   lv_tick_set_cb(tick_cb);
 
-  g_disp = lv_display_create(DISPLAY_WIDTH, DISPLAY_HEIGHT);
+  g_disp = lv_display_create(display_width(), display_height());
   if (!g_disp) {
     Serial.println("LVGL: display create failed");
     return false;
@@ -129,7 +129,7 @@ bool lvgl_port_init(void) {
     return false;
   }
 
-  const size_t buf_sz = (size_t)DISPLAY_WIDTH * (size_t)kBufLines * sizeof(lv_color_t);
+  const size_t buf_sz = (size_t)display_width() * (size_t)kBufLines * sizeof(lv_color_t);
   g_draw_buf = heap_caps_malloc(buf_sz, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
   if (!g_draw_buf) {
     Serial.printf("LVGL: draw buffer OOM (need %u bytes DMA)\n", (unsigned)buf_sz);
@@ -148,10 +148,11 @@ bool lvgl_port_suspend_draw_buf(void) {
   if (!g_ready || g_bufs_suspended) {
     return true;
   }
-  // SoftAP does not paint — return the 12.8KB INTERNAL+DMA block to the heap so
-  // Wi‑Fi/HTTP can reassemble after Flip / leave / re-enter without a power cycle.
+  // SoftAP does not paint — return the INTERNAL+DMA block to the heap so
+  // Wi‑Fi/HTTP can reassemble after leave / re-enter without a power cycle.
   // Keep a tiny static buffer registered so LVGL never sees a NULL draw buffer.
-  static lv_color_t s_tiny[DISPLAY_WIDTH];
+  // Sized for max logical width (landscape 320).
+  static lv_color_t s_tiny[LCD_HEIGHT];
   if (g_disp) {
     lv_display_set_buffers(g_disp, s_tiny, nullptr, sizeof(s_tiny),
                            LV_DISPLAY_RENDER_MODE_PARTIAL);
@@ -170,7 +171,7 @@ bool lvgl_port_resume_draw_buf(void) {
   if (!g_ready || !g_bufs_suspended) {
     return true;
   }
-  const size_t buf_sz = (size_t)DISPLAY_WIDTH * (size_t)kBufLines * sizeof(lv_color_t);
+  const size_t buf_sz = (size_t)display_width() * (size_t)kBufLines * sizeof(lv_color_t);
   g_draw_buf = heap_caps_malloc(buf_sz, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
   if (!g_draw_buf) {
     Serial.printf("LVGL: draw buf resume OOM (need %u)\n", (unsigned)buf_sz);

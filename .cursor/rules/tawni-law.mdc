@@ -1,0 +1,27 @@
+---
+description: Tawni shipping law wins over local briefs and chat memory
+alwaysApply: true
+---
+
+# Tawni shipping law
+
+Before any GitHub Release, public docs change, SoftAP/SSID change, version bump, or website/flasher version claim, read:
+
+**`../../TAWNI_RULES.md`** (workspace file: `Tawni.io/TAWNI_RULES.md`)
+
+That file **wins** if this firmware's `TAWNI.md`, README, handover docs, or prior chat disagree.
+
+- Do not invent a second SoftAP SSID, bin naming scheme, or release-build policy.
+- Public `.bin` = release build only (no debug / no host username paths).
+- Work only in this firmware folder unless the orchestrator asks otherwise.
+- Use the word **firmware** (not "face").
+
+
+- Keep the **common button map** in `TAWNI_RULES.md` section 3a (SoftAP / soft-off / wake timings). Only short-press jobs may differ.
+## Hardware SKUs
+
+- **Tawni** = original/smallest (no GPS).
+- **Rufous** = GPS + external antenna.
+- **Wardriver firmware = Rufous only.** Never build/flash/document it for base Tawni.
+- Other firmwares may run on Tawni or Rufous.
+- Wardriver release bin name: `wardriver-rufous-c5-vX.Y.Z.bin`
