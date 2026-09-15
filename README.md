@@ -1,65 +1,89 @@
-# Tawni — Wardriver
+<div align="center">
+  <img src="docs/images/tawni-logo.png" alt="Tawni" width="140">
 
-Passive Wi‑Fi + BLE survey with GPS. Same pocket box idea as other Tawni firmwares — this one is **Rufous only**.
+  <p><strong>Wardriver</strong></p>
+
+  <p>
+    Passive Wi‑Fi + BLE survey with GPS — Wigle CSV in flash, SoftAP export.<br>
+    Same pocket cabin, this firmware.
+  </p>
+
+  <p>
+    <a href="https://github.com/Tawni-io/wardriver/releases"><strong>Releases</strong></a>
+    ·
+    <a href="https://tawni.io/wardriver.html"><strong>Product page</strong></a>
+    ·
+    <a href="https://tawni.io"><strong>tawni.io</strong></a>
+  </p>
+
+  <p>
+    Current version: <strong>v0.3.4</strong>
+    ·
+    <a href="CHANGELOG.md">Changelog</a>
+  </p>
+</div>
+
+---
+
+## Table of Contents
+
+- [About The Project](#-about-the-project)
+- [Getting Started](#-getting-started)
+- [Usage](#-usage)
+- [Roadmap](#️-roadmap)
+- [License](#-license)
+
+---
+
+## 📖 About The Project
+
+<div align="center">
+  <img src="docs/images/about.jpg" alt="Tawni cabin (same pocket hardware; Wardriver needs Rufous)" width="250">
+</div>
+
+<br>
 
 > **Rufous only.** Needs GPS + external antenna. **Never** for base Tawni (no GPS).  
 > Wrong box → no fix, no useful Wigle log.
 
-**Hardware:** [LILYGO T-Display C5](https://www.lilygo.cc/products/t-display-c5) (ESP32-C5, 1.9″) on **Rufous** (GPS + external antenna).  
-**Product:** [tawni.io](https://tawni.io)
+Passive Wi‑Fi + BLE survey with GPS on the cabin. Flip pages with the two buttons — or a swipe if the touch screen is fitted. CSV export and settings live on your phone, not in a cabin menu.
 
-Current version: **v0.3.4** — [changelog](CHANGELOG.md) · [releases](https://github.com/Tawni-io/wardriver/releases)
-
-Release asset: `wardriver-rufous-c5-v0.3.4.bin`
-
----
-
-## What this firmware does
-
-| Job | Detail |
+| Page | Shows |
 | --- | --- |
-| Survey | Passive Wi‑Fi + BLE scan (no deauth / attack tools) |
-| GPS | Fix when available; empty coords if no fix (honest log) |
-| Log | Wigle CSV stored in onboard flash (no microSD) |
-| Export | SoftAP download / clear on your phone |
+| Live | Logging on/off, GPS fix, live counts |
+| Recent | Last hits |
+| Info | Firmware version, battery, storage |
 
-Cabin pages: **Live** (logging + fix + counts), **Recent** (last hits), **Info** (version, battery, storage). Settings and CSV live on the phone, not in a cabin menu.
+Survey is **passive only** (no deauth / attack tools). Logs are Wigle CSV in onboard flash (no microSD). No fix → empty coords (honest log).
 
----
+### Built With
 
-## Buttons
+**Rufous only** (GPS + external antenna). Do **not** flash or sell this firmware for base Tawni.
 
-Two buttons. The enclosure marks the **setup** button (bottom). Flip Display 180 does not swap them.
-
-| Input | Action |
-| --- | --- |
-| Bottom short | Start / stop logging |
-| Top short | Next page (Live / Recent / Info) |
-| Top long (~2 s) | Previous page |
-| Bottom long (~2 s) | Setup hotspot on/off |
-| Both held (~3 s) | Soft power-off (deep sleep) |
-| Bottom after wake (~1.5 s) | Stay on |
-
-Swipe left/right mirrors next/previous if the touch screen is fitted.
+Board: [LILYGO T-Display C5](https://www.lilygo.cc/products/t-display-c5) (ESP32-C5, 1.9″) on Rufous hardware.
 
 ---
 
-## Install & update
+## 🚀 Getting Started
 
-### USB — first flash or recovery
+Buyers: flash from [tawni.io](https://tawni.io) or a GitHub Release `.bin`. No PlatformIO required. Flash **Rufous** only.
 
-Use a USB-C cable and the flasher on [tawni.io](https://tawni.io) when available, or flash `wardriver-rufous-c5-v0.3.4.bin` from [Releases](https://github.com/Tawni-io/wardriver/releases) with your usual ESP32 tool.
+### Install & update
 
-Flash **Rufous** only. Base Tawni is not supported.
+#### USB — first flash or recovery
 
-### Phone — later updates
+Use a USB-C cable and the flasher on [tawni.io](https://tawni.io), or flash `wardriver-rufous-c5-v0.3.4.bin` from [Releases](https://github.com/Tawni-io/wardriver/releases) with your usual ESP32 tool.
+
+#### Phone — later updates
 
 1. Download `wardriver-rufous-c5-vX.Y.Z.bin` from [Releases](https://github.com/Tawni-io/wardriver/releases) (or use the flasher on [tawni.io](https://tawni.io) when available)
-2. Long-press the marked setup button (~2 s)
+2. Long-press the marked **setup** button (bottom, ~2 s)
 3. Join Wi‑Fi **TawniWardriver** → open `http://192.168.4.1`
 4. **Firmware** → upload the `.bin` → wait for reboot
 
 Keep the unit powered during upload.
+
+Asset name pattern: `wardriver-rufous-c5-vX.Y.Z.bin`
 
 <!-- website:omit -->
 
@@ -85,11 +109,9 @@ pio run -e tawni -t upload
 
 <!-- /website:omit -->
 
----
+### Setup & export
 
-## Setup & export
-
-Long-press the bottom (setup) button until the hotspot is on. Cabin shows setup / export mode.
+Long-press the bottom (setup) button until the hotspot is on.
 
 This firmware’s hotspot is **TawniWardriver**. Other Tawni firmwares use their own SSID so two boxes on the bench do not collide.
 
@@ -102,7 +124,31 @@ Logging starts and stops with the bottom short-press on the cabin. Export does n
 
 ---
 
-## License
+## 🧭 Usage
+
+Two buttons. The enclosure marks the **setup** button (bottom). Flip Display 180 does not swap them.
+
+| Input | Action |
+| --- | --- |
+| Bottom short | Start / stop logging |
+| Top short | Next page (Live / Recent / Info) |
+| Top long (~2 s) | Previous page |
+| Bottom long (~2 s) | Setup hotspot on/off (**TawniWardriver**) |
+| Both held (~3 s) | Soft power-off (deep sleep) |
+| Bottom after wake (~1.5 s) | Stay on |
+
+Swipe left/right mirrors next/previous if the touch screen is fitted.
+
+---
+
+## 🗺️ Roadmap
+
+- SoftAP OTA PIN / auth before wide promo (upload is open in v0.3.4, same pattern as Victron)
+- Cabin / export polish from real Rufous drives
+
+---
+
+## 📄 License
 
 Firmware: [MIT](LICENSE).
 
