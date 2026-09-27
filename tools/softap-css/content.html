@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html data-theme="tawni">
+  <body class="portal-shell map-page">
+    <!-- Class safelist for SoftAP home + /map chrome (purge source of truth).
+         Keep in sync with classes used in softap.cpp / map_ui.cpp. -->
+    <div class="navbar bg-base-200 rounded-box px-3 min-h-12 mb-1">
+      <div class="navbar-start">
+        <span class="font-bold text-lg">Wardriver</span>
+        <span class="badge badge-ghost badge-sm ml-2">Rufous</span>
+      </div>
+      <div class="navbar-end">
+        <span class="text-xs opacity-70">v0.0.0</span>
+      </div>
+    </div>
+
+    <main class="portal-main">
+      <div class="alert alert-success text-sm"><span>ok</span></div>
+      <div class="alert alert-error text-sm"><span>err</span></div>
+      <div class="alert alert-info text-sm"><span>info</span></div>
+      <div class="alert alert-warning text-sm"><span>warn</span></div>
+
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body portal-card gap-4 p-5">
+          <h2 class="card-title text-base">Status</h2>
+          <p class="text-sm opacity-70 leading-relaxed">muted</p>
+          <div class="flex flex-wrap gap-3">
+            <span class="badge badge-outline">Logging OFF</span>
+            <span class="badge badge-success">GPS fix</span>
+            <span class="badge badge-warning">GPS searching</span>
+            <span class="badge badge-ghost">GPS quiet</span>
+          </div>
+          <p class="text-sm opacity-70 mt-1">CSV stats</p>
+          <code class="text-xs opacity-80 block mt-1">http://192.168.4.1</code>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body portal-card gap-4 p-5">
+          <h2 class="card-title text-base">Map</h2>
+          <p class="text-sm opacity-70 leading-relaxed">Saved Wigle log + Rufous GPS.</p>
+          <a class="btn btn-primary btn-block mt-1" href="/map">Open map</a>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body portal-card gap-4 p-5">
+          <h2 class="card-title text-base">Log</h2>
+          <a class="btn btn-primary btn-block" href="/log.csv">Download Wigle CSV</a>
+          <form class="mt-3 pt-2 border-t border-base-300">
+            <button class="btn btn-ghost btn-sm btn-error" type="submit">Clear log</button>
+          </form>
+          <p class="text-xs opacity-60 mt-2">Clear erases the on-device CSV. Confirm when asked.</p>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body portal-card gap-4 p-5">
+          <h2 class="card-title text-base">Screen</h2>
+          <p class="text-sm opacity-70 leading-relaxed">Changing orientation reboots.</p>
+          <div class="join w-full mt-1">
+            <button class="btn btn-primary join-item flex-1" type="submit">Portrait</button>
+            <button class="btn btn-ghost join-item flex-1" type="submit">Landscape</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body portal-card gap-4 p-5">
+          <h2 class="card-title text-base">Phone internet for map tiles</h2>
+          <p class="text-sm opacity-70 leading-relaxed">Join your phone hotspot so map tiles can load.</p>
+          <form class="flex flex-col gap-4 w-full mt-1">
+            <label class="form-control w-full">
+              <div class="label py-1"><span class="label-text">SSID</span></div>
+              <input class="input input-bordered w-full" type="text" />
+            </label>
+            <label class="form-control w-full">
+              <div class="label py-1"><span class="label-text">Password</span></div>
+              <input class="input input-bordered w-full" type="password" />
+            </label>
+            <button class="btn btn-primary btn-block" type="submit">Save &amp; join</button>
+          </form>
+          <form class="mt-2">
+            <button class="btn btn-ghost btn-sm btn-error" type="submit">Forget Wi-Fi</button>
+          </form>
+          <button class="btn btn-outline btn-sm btn-block mt-2" type="submit">Broadcast setup hotspot</button>
+          <p class="text-xs opacity-60 mt-2">Drops this Wi-Fi and opens SoftAP recovery.</p>
+        </div>
+      </div>
+
+      <div class="card bg-base-200 shadow-sm">
+        <div class="card-body portal-card gap-4 p-5">
+          <h2 class="card-title text-base">Firmware update</h2>
+          <p class="text-sm opacity-70 leading-relaxed">App .bin only. Stay powered.</p>
+          <form class="flex flex-col gap-4 w-full mt-1">
+            <input class="file-input file-input-bordered w-full" type="file" />
+            <button class="btn btn-primary btn-block" type="submit">Upload &amp; reboot</button>
+          </form>
+          <progress class="progress progress-primary w-full mt-2" value="40" max="100"></progress>
+          <p class="text-sm opacity-70 mt-1">Uploading…</p>
+        </div>
+      </div>
+
+      <form class="mt-2">
+        <button class="btn btn-outline btn-block" type="submit">Exit portal</button>
+      </form>
+      <p class="text-xs opacity-60 mt-2">Returns to the cabin. Survey can run again.</p>
+
+      <div class="collapse collapse-arrow bg-base-200 mt-2">
+        <input type="checkbox" />
+        <div class="collapse-title text-sm font-medium opacity-70">Danger zone</div>
+        <div class="collapse-content">
+          <button class="btn btn-error btn-sm" type="submit">Erase prefs &amp; log</button>
+          <p class="text-xs opacity-60 mt-2">Clears Wi-Fi join + display prefs.</p>
+        </div>
+      </div>
+    </main>
+
+    <div class="map-chrome">
+      <a class="btn btn-primary btn-sm" href="/">Setup</a>
+      <button class="btn btn-ghost btn-sm" type="button">All</button>
+      <button class="btn btn-primary btn-sm" type="button">Wi-Fi</button>
+      <button class="btn btn-ghost btn-sm" type="button">BLE</button>
+      <button class="btn btn-ghost btn-sm" type="button">My GPS</button>
+      <span class="text-xs opacity-70">Loading…</span>
+      <span class="text-xs text-primary">busy</span>
+      <span class="loading loading-spinner loading-md text-primary"></span>
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <div class="font-semibold">Loading map…</div>
+    </div>
+    <div id="map"></div>
+    <div class="map-load">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+      <div class="font-semibold">Loading map…</div>
+    </div>
+    <div class="map-load hide"></div>
+    <div class="map-banner">CDN / tiles</div>
+  </body>
+</html>

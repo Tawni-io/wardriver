@@ -27,6 +27,10 @@ ehthumbs.db
 __pycache__/
 *.pyc
 
+# SoftAP DaisyUI CSS toolchain
+tools/softap-css/node_modules/
+tools/softap-css/dist/
+
 # AI / Cursor local admin (not needed by firmware users)
 .agent/
 agent-transcripts/

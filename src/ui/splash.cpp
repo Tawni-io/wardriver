@@ -1,5 +1,6 @@
 #include "ui/splash.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include <lvgl.h>
@@ -7,6 +8,10 @@
 #include "ui/lvgl_port.h"
 #include "ui/splash_logo.h"
 #include "display.h"
+
+#ifndef TAWNI_VERSION
+#define TAWNI_VERSION "0.0.0"
+#endif
 
 namespace {
 
@@ -45,13 +50,41 @@ void splash_show(void) {
   lv_obj_set_style_border_width(scr, 0, 0);
   lv_obj_set_style_pad_all(scr, 0, 0);
 
+  /* Bottom band reserved for wake GPS status — version never uses this line. */
+  constexpr int kStatusBand = 28;
+  constexpr int kVerGap = 6;
+  constexpr int kVerLine = 16;
+
   lv_obj_t* img = lv_image_create(scr);
   lv_image_set_src(img, splash_dsc());
   const int max_w = display_width() - 10;
+  const int max_h = display_height() - kStatusBand - kVerLine - kVerGap - 8;
+  int32_t scale = 256;
   if (kSplashLogoW > max_w) {
-    lv_image_set_scale(img, (int32_t)((256 * max_w) / kSplashLogoW));
+    scale = (int32_t)((256 * max_w) / kSplashLogoW);
   }
-  lv_obj_align(img, LV_ALIGN_CENTER, 0, -12);
+  if (kSplashLogoH > max_h) {
+    const int32_t h_scale = (int32_t)((256 * max_h) / kSplashLogoH);
+    if (h_scale < scale) scale = h_scale;
+  }
+  if (scale < 256) {
+    lv_image_set_scale(img, scale);
+  }
+  /* Nudge logo up so version sits under mark, above the GPS status band. */
+  const int scaled_h = (kSplashLogoH * scale) / 256;
+  const int block_h = scaled_h + kVerGap + kVerLine;
+  const int avail = display_height() - kStatusBand;
+  const int block_top = (avail - block_h) / 2;
+  lv_obj_align(img, LV_ALIGN_TOP_MID, 0, block_top > 0 ? block_top : 0);
+
+  /* Release string only — tracks -DTAWNI_VERSION from each GitHub ship. */
+  lv_obj_t* ver = lv_label_create(scr);
+  lv_obj_set_style_text_font(ver, &lv_font_montserrat_12, 0);
+  lv_obj_set_style_text_color(ver, lv_color_hex(0x8B949E), 0);
+  char ver_buf[40];
+  snprintf(ver_buf, sizeof(ver_buf), "Wardriver v%s", TAWNI_VERSION);
+  lv_label_set_text(ver, ver_buf);
+  lv_obj_align_to(ver, img, LV_ALIGN_OUT_BOTTOM_MID, 0, kVerGap);
 
   g_splash_status = lv_label_create(scr);
   lv_obj_set_style_text_font(g_splash_status, &lv_font_montserrat_12, 0);

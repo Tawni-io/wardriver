@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SoftAP / map layout helpers (kept tiny; DaisyUI owns components). */
+@layer components {
+  .portal-shell {
+    @apply min-h-screen bg-base-100 text-base-content;
+  }
+  .portal-main {
+    @apply mx-auto max-w-lg p-4 pb-12 flex flex-col gap-5;
+  }
+  /* Beat DaisyUI card-body default gap (.5rem) for readable phone layouts. */
+  .card-body.portal-card {
+    gap: 1rem !important;
+    padding: 1.25rem !important;
+  }
+  .map-chrome {
+    @apply absolute z-[1100] left-2 right-2 top-2 flex flex-wrap gap-2 items-center
+      rounded-box border border-base-300 bg-base-100/95 p-2.5 backdrop-blur-sm;
+  }
+  .map-banner {
+    @apply absolute z-[1100] left-2 right-2 bottom-2 alert alert-error text-sm py-3;
+  }
+  .map-load {
+    @apply absolute inset-0 z-[1200] flex flex-col items-center justify-center gap-3
+      bg-base-100/70 backdrop-blur-sm pointer-events-none;
+  }
+  .map-load.hide {
+    @apply hidden;
+  }
+  #map {
+    position: absolute;
+    inset: 0;
+  }
+  html.map-page,
+  body.map-page {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #0b0f14;
+  }
+  .leaflet-top.leaflet-left {
+    top: auto !important;
+    bottom: 24px !important;
+    left: 8px !important;
+    z-index: 1000;
+  }
+  .leaflet-control-zoom {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+  .leaflet-control-zoom a {
+    background: #151c26 !important;
+    color: #e8eef4 !important;
+    border: 1px solid #2a3544 !important;
+    width: 34px !important;
+    height: 34px !important;
+    line-height: 34px !important;
+  }
+  .leaflet-container {
+    background: #0b0f14;
+  }
+  .leaflet-popup-content-wrapper {
+    background: #151c26;
+    color: #e8eef4;
+    border-radius: 0.75rem;
+  }
+  .leaflet-popup-tip {
+    background: #151c26;
+  }
+}

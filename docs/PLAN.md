@@ -11,7 +11,7 @@ Build order and open questions. Product north star: [`PRODUCT.md`](PRODUCT.md). 
 | Area | Status |
 | --- | --- |
 | C5 BSP files (display, touch, splash, board JSON) | Present |
-| `src/main.cpp` + cabin / SoftAP / GPS / survey / Wigle | MVP in tree (**v0.3.4**) |
+| `src/main.cpp` + cabin / SoftAP / GPS / survey / Wigle | MVP in tree (**v0.4.0**) |
 | SoftAP / OTA | `TawniWardriver` — Flip, CSV export, OTA |
 | GPS / scan / Wigle log | Wired + logging |
 | Rufous | GPS + external antenna (this firmware only) |
@@ -41,7 +41,7 @@ Build order and open questions. Product north star: [`PRODUCT.md`](PRODUCT.md). 
 
 ### Phase D — Passive survey + log
 
-1. [x] Wi‑Fi scan loop (2.4 + 5); dedupe / refresh policy.  
+1. [x] Wiâ€‘Fi scan loop (2.4 + 5); dedupe / refresh policy.  
 2. [x] BLE scan (pause when SoftAP up).  
 3. [x] Append **Wigle CSV** rows to LittleFS (~3.4 MB partition).  
 4. [x] SoftAP: download file + clear + start/stop logging.  
@@ -60,9 +60,9 @@ Build order and open questions. Product north star: [`PRODUCT.md`](PRODUCT.md). 
 
 | Page | Content |
 | --- | --- |
-| Live | Logging on/off · GPS state · Wi‑Fi n · BLE n · band hint |
+| Live | Logging on/off Â· GPS state Â· Wiâ€‘Fi n Â· BLE n Â· band hint |
 | Recent | Last few SSIDs / BLE names (scroll not required — short list) |
-| Info | Version · Rufous · LiPo · free log space · SoftAP hint |
+| Info | Version Â· Rufous Â· LiPo Â· free log space Â· SoftAP hint |
 
 Start/stop logging: **SoftAP primary**; optional later: single obvious cabin gesture if it does not collide with SoftAP long-press.
 
@@ -70,8 +70,8 @@ Start/stop logging: **SoftAP primary**; optional later: single obvious cabin ges
 
 ## 4. Wigle CSV (MVP)
 
-- Emit a header compatible with Wigle Wi‑Fi/Bluetooth CSV import.  
-- Wi‑Fi and BLE both present in the downloadable file (Wigle-compatible type columns).  
+- Emit a header compatible with Wigle Wiâ€‘Fi/Bluetooth CSV import.  
+- Wiâ€‘Fi and BLE both present in the downloadable file (Wigle-compatible type columns).  
 - Timestamp: prefer GPS time when fix; else device uptime/RTC policy documented (ESP32-C5 may lack battery RTC — prefer GPS time, else leave empty or use scan epoch after SoftAP sets time — **decide in Phase D**).  
 - No fix: follow Wigle empty/zero coordinate conventions; do not fake a location.
 
@@ -117,7 +117,7 @@ pio device list
 pio device monitor -b 115200
 ```
 
-MVP **v0.3.4**: splash → cabin pages → GPS fix honesty → SoftAP CSV export. Monitor for NMEA / survey / SoftAP lines as needed.
+MVP **v0.4.0**: splash → cabin pages → GPS fix honesty → SoftAP CSV export. Monitor for NMEA / survey / SoftAP lines as needed.
 
 ---
 

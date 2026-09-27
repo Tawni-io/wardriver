@@ -64,6 +64,27 @@ void pump_ui(uint32_t ms) {
   }
 }
 
+/** Best-effort spinner while SoftAP/STA is switching. */
+bool portal_show_busy(const char* msg, uint32_t color) {
+  if (!lvgl_port_resume_draw_buf()) {
+    Serial.println("portal busy: LVGL resume skipped");
+    return false;
+  }
+  cabin_show_busy(msg, color);
+  pump_ui(500);
+  return true;
+}
+
+void portal_paint_setup_suspend(void) {
+  if (!lvgl_port_resume_draw_buf()) {
+    Serial.println("portal setup paint skipped");
+    return;
+  }
+  cabin_show_setup(softap_ip());
+  pump_ui(120);
+  lvgl_port_suspend_draw_buf();
+}
+
 void abort_soft_off_gps_awake(void) {
   gps_wake_run();
   survey_resume();
@@ -182,42 +203,101 @@ void abort_gpio_wake_if_released(bool panel_on) {
 }
 
 void enter_softap(void) {
-  if (softap_active()) return;
+  if (softap_is_ap()) return;
+
+  // STA portal → SoftAP recovery, or cabin → SoftAP setup
+  if (softap_is_sta()) {
+    Serial.println("STA → SoftAP recovery");
+    portal_show_busy("SWITCHING TO AP…", 0x00E676);
+    softap_stop();
+    softap_clear_stop_request();
+    softap_clear_join_request();
+    softap_clear_ap_fallback_request();
+    delay(300);
+    g_setup_ui = false;
+  } else {
+    portal_show_busy("OPENING HOTSPOT…", 0x00E676);
+  }
 
   survey_pause();
   Serial.printf("Entering SoftAP setup (free heap %u)\n", (unsigned)ESP.getFreeHeap());
   if (!softap_start()) {
-    cabin_show_message("WIFI FAILED", 0xFF1744);
+    if (lvgl_port_resume_draw_buf()) {
+      cabin_show_message("WIFI FAILED", 0xFF1744);
+      pump_ui(1200);
+      cabin_show_page(g_page);
+    }
     g_setup_ui = false;
     survey_resume();
     return;
   }
-  cabin_show_setup(softap_ip());
+  portal_paint_setup_suspend();
   g_setup_ui = true;
-  for (int i = 0; i < 10; i++) {
-    lvgl_port_handler();
-    delay(5);
-  }
-  lvgl_port_suspend_draw_buf();
 }
 
 void leave_softap(void) {
   if (!softap_active()) return;
 
-  Serial.println("SoftAP leave");
+  const bool want_join = softap_join_requested();
+  softap_clear_join_request();
+
+  Serial.println(want_join ? "SoftAP leave → join Wi-Fi" : "SoftAP leave → cabin");
   gps_wake_run();
+
+  if (want_join) {
+    portal_show_busy("JOINING WIFI…", 0xFF9100);
+  }
+
   softap_stop();
   softap_clear_stop_request();
+  // Let SoftAP/HTTP stacks release heap before STA or LVGL resume.
+  delay(400);
+  diag_wdt_feed();
+
+  g_setup_ui = false;
+
+  if (want_join) {
+    // Keep LVGL draw buf suspended through SoftAP→STA — resuming here often
+    // OOMs and used to ESP.restart(), which looks like "join then reboot".
+    Serial.printf("STA join begin (heap %u maxblk %u)\n", (unsigned)ESP.getFreeHeap(),
+                  (unsigned)ESP.getMaxAllocHeap());
+    survey_pause();
+    // Brief spinner after SoftAP tear-down if heap allows.
+    portal_show_busy("JOINING WIFI…", 0xFF9100);
+    if (softap_sta_start()) {
+      Serial.printf("STA portal up http://%s\n", softap_ip());
+      portal_paint_setup_suspend();
+      g_setup_ui = true;
+      return;
+    }
+    softap_set_flash_message("Wi-Fi join failed — SoftAP is back.", false);
+    Serial.println("STA join failed → SoftAP fallback");
+    portal_show_busy("JOIN FAILED…", 0xFF1744);
+    if (!softap_start()) {
+      if (lvgl_port_resume_draw_buf()) {
+        cabin_show_message("WIFI FAILED", 0xFF1744);
+        pump_ui(1200);
+        cabin_show_page(g_page);
+      }
+      survey_resume();
+      return;
+    }
+    if (lvgl_port_resume_draw_buf()) {
+      cabin_show_message("JOIN FAILED", 0xFF1744);
+      pump_ui(900);
+    }
+    portal_paint_setup_suspend();
+    g_setup_ui = true;
+    return;
+  }
 
   if (!lvgl_port_resume_draw_buf()) {
-    Serial.println("LVGL resume failed — restarting to reclaim heap");
+    Serial.println("LVGL resume failed after SoftAP — restarting to reclaim heap");
     delay(200);
     ESP.restart();
   }
 
-  g_setup_ui = false;
   cabin_show_message("LEAVING SETUP", 0x00E676);
-
   const uint32_t settle_until = millis() + 800;
   while (millis() < settle_until) {
     lvgl_port_handler();
@@ -226,7 +306,33 @@ void leave_softap(void) {
 
   survey_resume();
   cabin_show_page(g_page);
-  Serial.println("SoftAP leave → cabin UI armed");
+  Serial.println("Portal leave → cabin UI armed");
+}
+
+void portal_ap_fallback(void) {
+  Serial.println("Portal → SoftAP fallback");
+  softap_clear_ap_fallback_request();
+  softap_clear_join_request();
+  softap_clear_stop_request();
+  portal_show_busy("SWITCHING TO AP…", 0x00E676);
+  if (softap_active()) {
+    softap_stop();
+  }
+  delay(300);
+  g_setup_ui = false;
+  survey_pause();
+  softap_set_flash_message("Setup hotspot is on.", true);
+  if (!softap_start()) {
+    if (lvgl_port_resume_draw_buf()) {
+      cabin_show_message("WIFI FAILED", 0xFF1744);
+      pump_ui(1200);
+      cabin_show_page(g_page);
+    }
+    survey_resume();
+    return;
+  }
+  portal_paint_setup_suspend();
+  g_setup_ui = true;
 }
 
 void page_next(void) {
@@ -324,7 +430,10 @@ void poll_buttons(void) {
   // Bottom (GPIO0 / marked setup): long alone → SoftAP (Gym README / TAWNI ~2 s)
   if (down0 && !down28 && !long0_fired && (now - down0_ms) >= kLongPressMs) {
     long0_fired = true;
-    if (softap_active()) {
+    if (softap_is_sta()) {
+      Serial.println("GPIO0 long → SoftAP recovery from STA");
+      enter_softap();
+    } else if (softap_is_ap()) {
       Serial.println("GPIO0 long → leave SoftAP");
       leave_softap();
     } else {
@@ -487,8 +596,10 @@ void loop() {
 
   if (softap_active()) {
     softap_loop();
-    if (softap_stop_requested()) {
-      Serial.println("SoftAP /stop requested");
+    if (softap_ap_fallback_requested()) {
+      portal_ap_fallback();
+    } else if (softap_stop_requested()) {
+      Serial.println("Portal /stop requested");
       leave_softap();
     }
     delay(2);

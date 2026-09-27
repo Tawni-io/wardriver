@@ -1,11 +1,13 @@
-#include "ui/cabin.h"
+﻿#include "ui/cabin.h"
 
 #include "board_pins.h"
+#include "config/prefs.h"
 #include "diag.h"
 #include "display.h"
 #include "gps/gps.h"
 #include "log/wigle_log.h"
 #include "scan/survey.h"
+#include "softap/softap.h"
 #include "ui/lvgl_port.h"
 
 #include <Arduino.h>
@@ -28,14 +30,14 @@ constexpr uint32_t kOk = 0x00E676;
 constexpr uint32_t kCyan = 0x00BCD4;   /* chrome: PAGE, panel accents */
 constexpr uint32_t kOrange = 0xFF9100;
 constexpr uint32_t kPurple = 0x7C4DFF;  /* BLE identity */
-constexpr uint32_t kWifi = 0x42A5F5;    /* Wi‑Fi identity (distinct from chrome cyan) */
+constexpr uint32_t kWifi = 0x42A5F5;    /* Wiâ€‘Fi identity (distinct from chrome cyan) */
 
 constexpr int kPad = 6;
 constexpr int kGap = 6;
 /** Shared button-tile look (portrait bar + landscape rail). */
 constexpr int kBtnRadius = 6;
 constexpr int kBtnBarH = 30;   /* portrait: keep chrome slim */
-constexpr int kRailW = 60;     /* landscape: room for PAGE ↑ */
+constexpr int kRailW = 60;     /* landscape: room for PAGE â†‘ */
 constexpr int kRecentMaxUi = 16;
 constexpr int kRecentRowH = 18;
 constexpr int kRecentRssiW = 36;
@@ -46,7 +48,16 @@ lv_obj_t* scr_busy = nullptr;
 lv_obj_t* busy_title = nullptr;
 lv_obj_t* busy_spinner = nullptr;
 lv_obj_t* scr_setup = nullptr;
+lv_obj_t* setup_mode_panel = nullptr;
+lv_obj_t* setup_detail_panel = nullptr;
+lv_obj_t* setup_title = nullptr;
+lv_obj_t* setup_mode_sub = nullptr;
+lv_obj_t* setup_net_lbl = nullptr;
+lv_obj_t* setup_ssid = nullptr;
+lv_obj_t* setup_url_lbl = nullptr;
 lv_obj_t* setup_ip = nullptr;
+lv_obj_t* setup_hint = nullptr;
+lv_obj_t* setup_leave = nullptr;
 lv_obj_t* scr_live = nullptr;
 lv_obj_t* live_sub = nullptr;
 lv_obj_t* live_gps = nullptr;
@@ -271,6 +282,12 @@ void make_setup_hold_hint(lv_obj_t* parent, int x, int y, int w, int h) {
   lv_obj_align(hint, LV_ALIGN_LEFT_MID, 0, 0);
 }
 
+void fit_label(lv_obj_t* lbl, int max_w, bool wrap) {
+  if (!lbl || max_w < 8) return;
+  lv_obj_set_width(lbl, max_w);
+  lv_label_set_long_mode(lbl, wrap ? LV_LABEL_LONG_WRAP : LV_LABEL_LONG_CLIP);
+}
+
 void build_setup_screen(void) {
   scr_setup = make_screen();
   const int dw = display_width();
@@ -280,104 +297,103 @@ void build_setup_screen(void) {
 
   if (is_landscape()) {
     const int card_h = dh - outer * 2;
-    const int left_w = 150;
-    const int right_x = outer + left_w + gap;
-    const int right_w = dw - right_x - outer;
+    const int mode_w = 130;
+    const int detail_x = outer + mode_w + gap;
+    const int detail_w = dw - detail_x - outer;
+    const int mode_inner = mode_w - 12;
+    const int detail_inner = detail_w - 12;
 
-    lv_obj_t* left = make_accent_panel(scr_setup, outer, outer, left_w, card_h, kOk);
-    lv_obj_t* t = make_label(left, &lv_font_montserrat_20, kOk);
-    lv_label_set_text(t, LV_SYMBOL_SETTINGS " SETUP");
-    lv_obj_align(t, LV_ALIGN_TOP_LEFT, 0, 0);
+    setup_mode_panel = make_accent_panel(scr_setup, outer, outer, mode_w, card_h, kOk);
+    setup_title = make_label(setup_mode_panel, &lv_font_montserrat_14, kOk);
+    lv_label_set_text(setup_title, "Broadcasting as AP");
+    fit_label(setup_title, mode_inner, true);
+    lv_obj_align(setup_title, LV_ALIGN_TOP_LEFT, 0, 0);
 
-    lv_obj_t* wifi = make_label(left, &lv_font_montserrat_14, kFg);
-    lv_label_set_text(wifi, LV_SYMBOL_WIFI " TawniWardriver");
-    lv_obj_set_width(wifi, left_w - 12);
-    lv_label_set_long_mode(wifi, LV_LABEL_LONG_CLIP);
-    lv_obj_align(wifi, LV_ALIGN_TOP_LEFT, 0, 32);
+    setup_mode_sub = make_label(setup_mode_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_mode_sub, "SoftAP hotspot");
+    fit_label(setup_mode_sub, mode_inner, true);
+    lv_obj_align(setup_mode_sub, LV_ALIGN_TOP_LEFT, 0, 48);
 
-    setup_ip = make_label(left, &lv_font_montserrat_12, kCyan);
+    setup_detail_panel =
+        make_accent_panel(scr_setup, detail_x, outer, detail_w, card_h, kCyan);
+    setup_net_lbl = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_net_lbl, "Network");
+    fit_label(setup_net_lbl, detail_inner, false);
+    lv_obj_align(setup_net_lbl, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    setup_ssid = make_label(setup_detail_panel, &lv_font_montserrat_14, kFg);
+    lv_label_set_text(setup_ssid, "TawniWardriver");
+    fit_label(setup_ssid, detail_inner, false);
+    lv_obj_align(setup_ssid, LV_ALIGN_TOP_LEFT, 0, 16);
+
+    setup_url_lbl = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_url_lbl, "Address");
+    fit_label(setup_url_lbl, detail_inner, false);
+    lv_obj_align(setup_url_lbl, LV_ALIGN_TOP_LEFT, 0, 40);
+
+    setup_ip = make_label(setup_detail_panel, &lv_font_montserrat_14, kCyan);
     lv_label_set_text(setup_ip, "http://192.168.4.1");
-    lv_obj_set_width(setup_ip, left_w - 12);
-    lv_label_set_long_mode(setup_ip, LV_LABEL_LONG_CLIP);
-    lv_obj_align(setup_ip, LV_ALIGN_TOP_LEFT, 0, 54);
+    fit_label(setup_ip, detail_inner, true);
+    lv_obj_align(setup_ip, LV_ALIGN_TOP_LEFT, 0, 56);
 
-    lv_obj_t* join = make_label(left, &lv_font_montserrat_12, kMuted);
-    lv_label_set_text(join, "Join on your phone");
-    lv_obj_align(join, LV_ALIGN_TOP_LEFT, 0, 80);
+    setup_hint = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_hint, "Join this Wi-Fi on your phone.");
+    fit_label(setup_hint, detail_inner, true);
+    lv_obj_align(setup_hint, LV_ALIGN_TOP_LEFT, 0, 90);
 
-    lv_obj_t* leave = make_label(left, &lv_font_montserrat_12, kMuted);
-    lv_label_set_text(leave, "Hold Start to leave");
-    lv_obj_align(leave, LV_ALIGN_TOP_LEFT, 0, 100);
-
-    lv_obj_t* right = make_accent_panel(scr_setup, right_x, outer, right_w, card_h, kCyan);
-    lv_obj_t* st = make_label(right, &lv_font_montserrat_14, kCyan);
-    lv_label_set_text(st, "On this page");
-    lv_obj_align(st, LV_ALIGN_TOP_LEFT, 0, 0);
-
-    const char* services[] = {
-        "1. Screen layout",
-        "2. Wigle CSV",
-        "3. GPS status",
-        "4. Firmware OTA",
-        "5. Factory reset",
-    };
-    for (int i = 0; i < 5; i++) {
-      lv_obj_t* l = make_label(right, &lv_font_montserrat_12, kFg);
-      lv_label_set_text(l, services[i]);
-      lv_obj_set_width(l, right_w - 12);
-      lv_label_set_long_mode(l, LV_LABEL_LONG_CLIP);
-      lv_obj_align(l, LV_ALIGN_TOP_LEFT, 0, 26 + i * 18);
-    }
+    setup_leave = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_leave, "Hold Start to leave");
+    fit_label(setup_leave, detail_inner, false);
+    lv_obj_align(setup_leave, LV_ALIGN_BOTTOM_LEFT, 0, 0);
   } else {
-    const int top_h = 120;
-    const int bot_y = outer + top_h + gap;
-    const int bot_h = dh - bot_y - outer;
     const int w = dw - outer * 2;
+    const int mode_h = 96;
+    const int detail_y = outer + mode_h + gap;
+    const int detail_h = dh - detail_y - outer;
+    const int inner = w - 12;
 
-    lv_obj_t* left = make_accent_panel(scr_setup, outer, outer, w, top_h, kOk);
-    lv_obj_t* t = make_label(left, &lv_font_montserrat_20, kOk);
-    lv_label_set_text(t, LV_SYMBOL_SETTINGS " SETUP");
-    lv_obj_align(t, LV_ALIGN_TOP_LEFT, 0, 0);
+    setup_mode_panel = make_accent_panel(scr_setup, outer, outer, w, mode_h, kOk);
+    setup_title = make_label(setup_mode_panel, &lv_font_montserrat_20, kOk);
+    lv_label_set_text(setup_title, "Broadcasting as AP");
+    fit_label(setup_title, inner, true);
+    lv_obj_align(setup_title, LV_ALIGN_TOP_LEFT, 0, 0);
 
-    lv_obj_t* wifi = make_label(left, &lv_font_montserrat_14, kFg);
-    lv_label_set_text(wifi, LV_SYMBOL_WIFI " TawniWardriver");
-    lv_obj_set_width(wifi, w - 12);
-    lv_label_set_long_mode(wifi, LV_LABEL_LONG_CLIP);
-    lv_obj_align(wifi, LV_ALIGN_TOP_LEFT, 0, 32);
+    setup_mode_sub = make_label(setup_mode_panel, &lv_font_montserrat_14, kMuted);
+    lv_label_set_text(setup_mode_sub, "SoftAP hotspot");
+    fit_label(setup_mode_sub, inner, true);
+    lv_obj_align(setup_mode_sub, LV_ALIGN_TOP_LEFT, 0, 52);
 
-    setup_ip = make_label(left, &lv_font_montserrat_12, kCyan);
+    setup_detail_panel =
+        make_accent_panel(scr_setup, outer, detail_y, w, detail_h, kCyan);
+    setup_net_lbl = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_net_lbl, "Network");
+    fit_label(setup_net_lbl, inner, false);
+    lv_obj_align(setup_net_lbl, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    setup_ssid = make_label(setup_detail_panel, &lv_font_montserrat_14, kFg);
+    lv_label_set_text(setup_ssid, "TawniWardriver");
+    fit_label(setup_ssid, inner, true);
+    lv_obj_align(setup_ssid, LV_ALIGN_TOP_LEFT, 0, 18);
+
+    setup_url_lbl = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_url_lbl, "Address");
+    fit_label(setup_url_lbl, inner, false);
+    lv_obj_align(setup_url_lbl, LV_ALIGN_TOP_LEFT, 0, 52);
+
+    setup_ip = make_label(setup_detail_panel, &lv_font_montserrat_14, kCyan);
     lv_label_set_text(setup_ip, "http://192.168.4.1");
-    lv_obj_set_width(setup_ip, w - 12);
-    lv_label_set_long_mode(setup_ip, LV_LABEL_LONG_WRAP);
-    lv_obj_align(setup_ip, LV_ALIGN_TOP_LEFT, 0, 54);
+    fit_label(setup_ip, inner, true);
+    lv_obj_align(setup_ip, LV_ALIGN_TOP_LEFT, 0, 70);
 
-    lv_obj_t* join = make_label(left, &lv_font_montserrat_12, kMuted);
-    lv_label_set_text(join, "Join on your phone");
-    lv_obj_align(join, LV_ALIGN_TOP_LEFT, 0, 78);
+    setup_hint = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_hint, "Join this Wi-Fi on your phone, then open the address.");
+    fit_label(setup_hint, inner, true);
+    lv_obj_align(setup_hint, LV_ALIGN_TOP_LEFT, 0, 108);
 
-    lv_obj_t* leave = make_label(left, &lv_font_montserrat_12, kMuted);
-    lv_label_set_text(leave, "Hold Start to leave");
-    lv_obj_align(leave, LV_ALIGN_TOP_LEFT, 0, 96);
-
-    lv_obj_t* right = make_accent_panel(scr_setup, outer, bot_y, w, bot_h, kCyan);
-    lv_obj_t* st = make_label(right, &lv_font_montserrat_14, kCyan);
-    lv_label_set_text(st, "On this page");
-    lv_obj_align(st, LV_ALIGN_TOP_LEFT, 0, 0);
-
-    const char* services[] = {
-        "1. Screen layout",
-        "2. Wigle CSV",
-        "3. GPS status",
-        "4. Firmware OTA",
-        "5. Factory reset",
-    };
-    for (int i = 0; i < 5; i++) {
-      lv_obj_t* l = make_label(right, &lv_font_montserrat_12, kFg);
-      lv_label_set_text(l, services[i]);
-      lv_obj_set_width(l, w - 12);
-      lv_label_set_long_mode(l, LV_LABEL_LONG_CLIP);
-      lv_obj_align(l, LV_ALIGN_TOP_LEFT, 0, 28 + i * 22);
-    }
+    setup_leave = make_label(setup_detail_panel, &lv_font_montserrat_12, kMuted);
+    lv_label_set_text(setup_leave, "Hold Start to leave");
+    fit_label(setup_leave, inner, false);
+    lv_obj_align(setup_leave, LV_ALIGN_BOTTOM_LEFT, 0, 0);
   }
 }
 
@@ -422,7 +438,7 @@ void build_live_screen(void) {
     make_count_tile(scr_live, stats_x, kPad + stats_h + kGap, stats_w, stats_h,
                     LV_SYMBOL_BLUETOOTH " BLE", kPurple, &live_ble_total, &live_ble_session);
   } else {
-    /* Compact LIVE header; full-width Wi‑Fi above BLE. */
+    /* Compact LIVE header; full-width Wiâ€‘Fi above BLE. */
     const int status_h = 108;
     const int stack_top = kPad + status_h + kGap;
     const int stack_h = bottom - stack_top;
@@ -667,18 +683,71 @@ void cabin_show_busy(const char* title, uint32_t color_hex) {
   lv_obj_set_style_text_color(busy_title, lv_color_hex(color_hex), 0);
   if (busy_spinner) {
     lv_obj_clear_flag(busy_spinner, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_set_style_arc_color(busy_spinner, lv_color_hex(color_hex), LV_PART_INDICATOR);
   }
   load_screen(scr_busy);
 }
 
 void cabin_show_setup(const char* ip_or_null) {
-  char line[36];
+  const bool on_lan = softap_is_sta();
+  const uint32_t mode_accent = on_lan ? kOrange : kOk;
+  const uint32_t detail_accent = on_lan ? kOrange : kCyan;
+  const uint32_t ip_color = on_lan ? kOrange : kCyan;
+
+  char url[40];
   if (ip_or_null && ip_or_null[0]) {
-    snprintf(line, sizeof(line), "http://%s", ip_or_null);
+    snprintf(url, sizeof(url), "http://%s", ip_or_null);
   } else {
-    snprintf(line, sizeof(line), "http://192.168.4.1");
+    snprintf(url, sizeof(url), "http://192.168.4.1");
   }
-  lv_label_set_text(setup_ip, line);
+
+  char net_name[40] = "TawniWardriver";
+  if (on_lan) {
+    char pass[65];
+    prefs_get_wifi(net_name, sizeof(net_name), pass, sizeof(pass));
+    if (!net_name[0]) {
+      snprintf(net_name, sizeof(net_name), "phone hotspot");
+    }
+  }
+
+  if (setup_mode_panel) {
+    lv_obj_set_style_border_color(setup_mode_panel, lv_color_hex(mode_accent), 0);
+  }
+  if (setup_detail_panel) {
+    lv_obj_set_style_border_color(setup_detail_panel, lv_color_hex(detail_accent), 0);
+  }
+  if (setup_title) {
+    lv_label_set_text(setup_title, on_lan ? "Connected to WiFi" : "Broadcasting as AP");
+    lv_obj_set_style_text_color(setup_title, lv_color_hex(mode_accent), 0);
+  }
+  if (setup_mode_sub) {
+    lv_label_set_text(setup_mode_sub, on_lan ? "On your phone hotspot" : "SoftAP hotspot");
+    lv_obj_set_style_text_color(setup_mode_sub, lv_color_hex(on_lan ? kOrange : kMuted), 0);
+  }
+  if (setup_net_lbl) {
+    lv_label_set_text(setup_net_lbl, on_lan ? "Joined network" : "Broadcast SSID");
+  }
+  if (setup_ssid) {
+    lv_label_set_text(setup_ssid, net_name);
+    lv_obj_set_style_text_color(setup_ssid, lv_color_hex(on_lan ? kOk : kFg), 0);
+  }
+  if (setup_url_lbl) {
+    lv_label_set_text(setup_url_lbl, "Address");
+  }
+  if (setup_ip) {
+    lv_label_set_text(setup_ip, url);
+    lv_obj_set_style_text_color(setup_ip, lv_color_hex(ip_color), 0);
+  }
+  if (setup_hint) {
+    lv_label_set_text(setup_hint,
+                      on_lan ? "Stay on this Wi-Fi. Open the address for map & setup."
+                             : "Join this Wi-Fi on your phone, then open the address.");
+    lv_obj_set_style_text_color(setup_hint, lv_color_hex(kMuted), 0);
+  }
+  if (setup_leave) {
+    lv_label_set_text(setup_leave, "Hold Start to leave");
+  }
+
   load_screen(scr_setup);
 }
 
