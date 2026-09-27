@@ -8,7 +8,7 @@
 
 bool cabin_init(void);
 void cabin_show_message(const char* title, uint32_t color_hex);
-/** Full-screen busy state with spinner (logging start/stop). */
+/** Full-screen busy state with spinner (setup enter/exit, shutdown, logging). */
 void cabin_show_busy(const char* title, uint32_t color_hex);
 void cabin_show_setup(const char* ip_or_null);
 void cabin_show_page(uint8_t index);

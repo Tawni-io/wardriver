@@ -116,15 +116,14 @@ Long-press the bottom (setup) button until the hotspot is on.
 This firmware’s hotspot is **TawniWardriver**. Other Tawni firmwares use their own SSID so two boxes on the bench do not collide.
 
 1. Join **TawniWardriver** (open network) → `http://192.168.4.1`
-2. Portal order on the phone: **Status** → **Map** → **Log** → **Screen** → **Phone internet for map tiles** → **Firmware** → **Exit** → **Danger zone**
-3. **Open map** for the saved Wigle log (last 500 geolocated hits) + Rufous GPS. Map tiles need phone internet — use **Save & join** on your hotspot if tiles fail on SoftAP alone
-4. **Download Wigle CSV** or **Clear log** (confirm) as needed
-5. **Portrait / Landscape** if you want a different cabin layout (reboots to apply)
-6. **Firmware** upload for field updates, or **Exit portal** when done
+2. Portal order on the phone: **Status** → **Log** → **Screen** → **Firmware** → **Exit** → **Danger zone**
+3. **Download Wigle CSV** or **Clear log** (confirm) as needed
+4. **Portrait / Landscape** if you want a different cabin layout (reboots to apply)
+5. **Firmware** upload for field updates, or **Exit portal** when done
 
 Logging starts and stops with the bottom short-press on the cabin. Export does not invent GPS coordinates.
 
-Cabin while the portal is up: **Broadcasting as AP** (green) or **Connected to WiFi** (orange) with the URL to open on your phone.
+Cabin while the portal is up: **Broadcasting as AP** with the URL to open on your phone.
 
 ---
 
@@ -149,7 +148,7 @@ Swipe left/right mirrors next/previous if the touch screen is fitted.
 
 - SoftAP OTA PIN / auth before wide promo (upload is open in v0.4.0, same pattern as Victron)
 - Cabin / export polish from real Rufous drives
-- Daily “auto-join saved Wi‑Fi on setup” path (reduce SoftAP dance for map)
+- Rethink on-device map / dual-radio portal once survey can stay live
 
 ---
 
@@ -173,7 +172,7 @@ npm install
 npm run build
 ```
 
-That regenerates `src/softap/portal_css.h` (purged Tailwind + DaisyUI). Keep `content.html` in sync with classes used in `src/softap/softap.cpp` and `map_ui.cpp`.
+That regenerates `src/softap/portal_css.h` (purged Tailwind + DaisyUI). Keep `content.html` in sync with classes used in `src/softap/softap.cpp`.
 
 Field binary: `.pio/build/tawni/firmware.bin`  
 Rename for a release: `wardriver-rufous-c5-vX.Y.Z.bin`

@@ -40,7 +40,7 @@ MVP storage = **flash only** (no microSD). Export = SoftAP download.
 | Radios | Passive Wiâ€‘Fi (2.4 + 5) + BLE scan |
 | GPS | NMEA fix → geotag rows when available |
 | Log format | **Wigle CSV** (Wiâ€‘Fi + BLE rows) |
-| SoftAP | Open `TawniWardriver` → DaisyUI portal: Status, Map, Log, Screen, phone Wi‑Fi join, Firmware, Exit, Danger zone |
+| SoftAP | Open `TawniWardriver` → DaisyUI portal: Status, Log, Screen, Firmware, Exit, Danger zone |
 | Updates | Phone → SoftAP Firmware section → app `.bin` |
 | Out of scope | Deauth, Evil Portal, packet injection, SD card, Tawni SKU support |
 
@@ -49,16 +49,14 @@ MVP storage = **flash only** (no microSD). Export = SoftAP download.
 Join `TawniWardriver` → `http://192.168.4.1`:
 
 1. **Status** — version, survey paused, logging, GPS, log size / free space, portal URL  
-2. **Map** — open live map (saved log + Rufous GPS; last 500 geolocated hits)  
-3. **Log** — Download Wigle CSV · Clear log (confirm; secondary)  
-4. **Screen** — Portrait (default) / Landscape — reboots to apply  
-5. **Phone internet for map tiles** — optional join phone hotspot (STA) so OSM tiles load  
-6. **Firmware** — upload app `.bin`  
-7. **Exit portal** · **Danger zone** (factory reset, collapsed)
+2. **Log** — Download Wigle CSV · Clear log (confirm; secondary)  
+3. **Screen** — Portrait (default) / Landscape — reboots to apply  
+4. **Firmware** — upload app `.bin`  
+5. **Exit portal** · **Danger zone** (factory reset, collapsed)
 
-UI: DaisyUI theme; CSS served from the device (`/portal.css`). Leaflet/OSM still need phone internet for tiles.
+UI: DaisyUI theme; CSS served from the device (`/portal.css`). SoftAP is setup/export only — survey radios pause while the portal is up. On-device map / STA join deferred until a dual-radio design exists.
 
-**Cabin while SoftAP is up:** **Broadcasting as AP** or **Connected to WiFi** with the URL. Survey radios paused.
+**Cabin while SoftAP is up:** **Broadcasting as AP** with the URL. Survey radios paused.
 
 ### Cabin should feel like
 

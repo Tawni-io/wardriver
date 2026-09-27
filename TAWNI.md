@@ -175,21 +175,19 @@ ESP32-C5: **pause NimBLE scan before SoftAP**, and vice versa. Continuous BLE sc
 
 ## 6. SoftAP + OTA (reuse the pattern)
 
-Phone is the settings, **map**, and export surface. One DaisyUI page (CSS on-device). Not a cabin wizard.
+Phone is the settings and export surface. One DaisyUI page (CSS on-device). Not a cabin wizard.
 
 **Feel**
 
 1. First boot → SoftAP can already be on; cabin shows **Broadcasting as AP** + `TawniWardriver` (or Live + honest empty log — see PRODUCT).
-2. Join SSID → `http://192.168.4.1` → Status → Map → Log → Screen → optional phone Wi‑Fi join → Firmware → Exit → Danger zone.
-3. Later: GPIO0 long toggles the AP. Optional STA join for map tiles; cabin shows **Connected to WiFi** + LAN IP.
+2. Join SSID → `http://192.168.4.1` → Status → Log → Screen → Firmware → Exit → Danger zone.
+3. Later: GPIO0 long toggles the AP.
 
 **Always on that page**
 
 - Version string (navbar)
-- **Map** — saved Wigle log (last 500 geolocated) + Rufous GPS
 - **Screen** — Portrait / Landscape (reboots)
 - Log download / clear (Wigle CSV; clear confirm-gated)
-- Optional join phone hotspot for OSM tiles
 - Firmware upload (app `.bin` only) + Factory reset (Danger zone)
 - Exit portal
 

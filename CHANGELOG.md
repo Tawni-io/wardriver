@@ -5,14 +5,21 @@ Release binaries: `wardriver-rufous-c5-vX.Y.Z.bin` (Rufous only).
 
 Newest first.
 
+## Unreleased
+
+Drop SoftAP map and external AP join (survey cannot run at the same time; rethink later).
+
+- Remove `/map`, `/api/points`, `/api/gps`, Leaflet UI (`map_ui.*`)
+- Remove STA portal / phone-hotspot join (`/wifi/*`, prefs `wssid`/`wpass`, cabin “Connected to WiFi”)
+- SoftAP portal: Status → Log → Screen → Firmware → Exit → Danger zone
+- Trim DaisyUI CSS safelist (no map chrome); clear leftover Wi‑Fi join NVS on boot
+
 ## 0.4.0
 
-SoftAP map + DaisyUI portal on Rufous.
+SoftAP DaisyUI portal on Rufous (map + STA join shipped here; removed in Unreleased).
 
 - SoftAP portal restyled with **DaisyUI** (purged Tailwind CSS served from the device at `/portal.css` — no CSS CDN). Rebuild: `tools/softap-css` → `src/softap/portal_css.h`
-- Portal order: Status → Map → Log → Screen → Phone internet for map tiles → Firmware → Exit → Danger zone (collapsed)
-- SoftAP **map** (`/map`): Leaflet + OSM (CDN for tiles/scripts); last **500** geolocated hits; loading spinner; Wi‑Fi / BLE filters
-- Optional **join phone hotspot** (STA portal) so map tiles can load; cabin setup: Broadcasting as AP vs Connected to WiFi; spinner on SoftAP↔STA transitions
+- Portal order (at ship): Status → Map → Log → Screen → Phone internet for map tiles → Firmware → Exit → Danger zone (collapsed)
 - SoftAP SSID **TawniWardriver** (shipping law)
 - Clear log / factory reset stay confirm-gated and visually secondary
 
